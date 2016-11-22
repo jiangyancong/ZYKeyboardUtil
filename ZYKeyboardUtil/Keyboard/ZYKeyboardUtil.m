@@ -32,6 +32,7 @@ static UIView *FIRST_RESPONDER;
 @property (copy, nonatomic) animateWhenKeyboardAppearAutomaticAnimBlock animateWhenKeyboardAppearAutomaticAnimBlock;
 @property (copy, nonatomic) animateWhenKeyboardDisappearBlock animateWhenKeyboardDisappearBlock;
 @property (copy, nonatomic) printKeyboardInfoBlock printKeyboardInfoBlock;
+@property (weak, nonatomic) UIView *firstResponse;
 @end
 
 
@@ -66,8 +67,9 @@ static UIView *FIRST_RESPONDER;
     
     self.adaptiveController = viewController;
     for (UIView *adaptiveViews in adaptiveViewList) {
-        FIRST_RESPONDER = nil;
-        UIView *firstResponderView = [self recursionTraverseFindFirstResponderIn:adaptiveViews];
+        UIView *firstResponderView = nil;
+
+        [self recursionTraverseFindFirstResponderIn:adaptiveViews responser:&firstResponderView];
         if (nil != firstResponderView) {
             self.adaptiveView = firstResponderView;
             [self fitKeyboardAutomatically:firstResponderView controllerView:viewController.view keyboardRect:_keyboardInfo.frameEnd];
@@ -99,7 +101,8 @@ static UIView *FIRST_RESPONDER;
     
     for (UIView *adaptiveViews in adaptiveViewList) {
         FIRST_RESPONDER = nil;
-        UIView *firstResponderView = [self recursionTraverseFindFirstResponderIn:adaptiveViews];
+        UIView *firstResponderView = nil;
+        [self recursionTraverseFindFirstResponderIn:adaptiveViews responser:&firstResponderView];
         if (nil != firstResponderView) {
             self.adaptiveView = firstResponderView;
             [self fitKeyboardAutomatically:firstResponderView controllerView:adaptiveController.view keyboardRect:_keyboardInfo.frameEnd];
@@ -108,20 +111,39 @@ static UIView *FIRST_RESPONDER;
     }
 }
 
-- (UIView *)recursionTraverseFindFirstResponderIn:(UIView *)view {
+- (void)recursionTraverseFindFirstResponderIn:(UIView *)view responser:(UIView **)firstResponser{
+    
     if ([view isFirstResponder]) {
-        FIRST_RESPONDER = view;
+        *firstResponser = view;
     } else {
         for (UIView *subView in view.subviews) {
             if ([subView isFirstResponder]) {
-                FIRST_RESPONDER = subView;
-                return FIRST_RESPONDER;
+                *firstResponser = subView;
+                return;
             }
-            [self recursionTraverseFindFirstResponderIn:subView];
+            [self recursionTraverseFindFirstResponderIn:subView responser:firstResponser];
+            
         }
+        
     }
-    return FIRST_RESPONDER;
+    
+    return;
 }
+
+//- (UIView *)recursionTraverseFindFirstResponderIn:(UIView *)view {
+//    if ([view isFirstResponder]) {
+//        FIRST_RESPONDER = view;
+//    } else {
+//        for (UIView *subView in view.subviews) {
+//            if ([subView isFirstResponder]) {
+//                FIRST_RESPONDER = subView;
+//                return FIRST_RESPONDER;
+//            }
+//            [self recursionTraverseFindFirstResponderIn:subView];
+//        }
+//    }
+//    return FIRST_RESPONDER;
+//}
 
 - (void)fitKeyboardAutomatically:(UIView *)adaptiveView controllerView:(UIView *)controllerView keyboardRect:(CGRect)keyboardRect {
     UIWindow *window = [[UIApplication sharedApplication] keyWindow];
